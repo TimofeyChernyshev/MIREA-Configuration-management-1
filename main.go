@@ -2,6 +2,8 @@ package main
 
 import (
 	"bufio"
+	"errors"
+	"flag"
 	"fmt"
 	"os"
 	"os/user"
@@ -11,11 +13,16 @@ import (
 
 // Структура для хранения команд - карта, где ключи - имена команд, а значения - функции
 type Shell struct {
-	commands map[string]func([]string)
+	commands      map[string]func([]string)
+	vfsPath       string
+	startupScript string
 }
 
-func NewShell() *Shell {
-	shell := &Shell{}
+func NewShell(vfsPath, startupScript string) *Shell {
+	shell := &Shell{
+		vfsPath:       vfsPath,
+		startupScript: startupScript,
+	}
 	shell.commands = map[string]func([]string){
 		"ls":   shell.lsCommand,
 		"cd":   shell.cdCommand,
@@ -32,12 +39,45 @@ func (s *Shell) cdCommand(args []string) {
 func (s *Shell) exitCommand(args []string) {
 	os.Exit(0)
 }
-func (s *Shell) executeCommand(cmd string, args []string) {
+func (s *Shell) executeCommand(cmd string, args []string) error {
 	if handler, exists := s.commands[cmd]; exists {
 		handler(args)
 	} else {
-		fmt.Printf("Command doesn`t exists\n")
+		return errors.New("сommand doesn`t exists")
 	}
+	return nil
+}
+func (s *Shell) executeScript(scriptPath string) error {
+	file, err := os.Open(scriptPath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	var cmd_err error
+	cmd_err_flag := 0
+	fmt.Printf("Startup script started work\n")
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		input := strings.TrimSpace(scanner.Text())
+		// пропускаем пустые строки и комментарии
+		if input == "" || strings.HasPrefix(input, "#") {
+			continue
+		}
+		fmt.Printf("%s%s\n", getInvitation(), input)
+		cmd, args := parser(input)
+		cmd_err = s.executeCommand(cmd, args)
+		if cmd_err != nil {
+			cmd_err_flag = 1
+			fmt.Printf("Error: %v\n", cmd_err)
+		}
+	}
+	if cmd_err_flag == 1 {
+		return errors.New("сommand doesn`t exists")
+	}
+	if err := scanner.Err(); err != nil {
+		return err
+	}
+	return nil
 }
 
 // Кастомное приглашение к вводу
@@ -48,7 +88,7 @@ func getInvitation() string {
 	if err != nil {
 		username = os.Getenv("USER")
 	} else {
-		username = currentUser.Username
+		username = currentUser.Name
 	}
 	// Имя хоста
 	hostname, err := os.Hostname()
@@ -89,7 +129,34 @@ func parser(cmd string) (string, []string) {
 }
 
 func main() {
-	shell := NewShell()
+	var vfsPath string
+	var startupScript string
+	var help bool
+
+	// vfs - параметр, -vfs аргументы, если нет аргументов, то vfsPath = ".vfs", "Path to VFS" - текст справки при вызове -help
+	flag.StringVar(&vfsPath, "vfs", ".vfs", "Path to VFS")
+	flag.StringVar(&startupScript, "script", "", "Path to startup script")
+	flag.BoolVar(&help, "help", false, "Show help")
+	flag.BoolVar(&help, "h", false, "Show help (short form)")
+
+	flag.Parse()
+
+	if help {
+		flag.Usage()
+		os.Exit(0)
+	}
+
+	shell := NewShell(vfsPath, startupScript)
+	if startupScript != "" {
+		if err := shell.executeScript(startupScript); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			fmt.Println("Script ended with error")
+			os.Exit(1)
+		} else {
+			fmt.Println("Script successfully ended")
+		}
+	}
+
 	scanner := bufio.NewScanner(os.Stdin)
 	for {
 		// Кастомное приглашение к вводу
@@ -101,9 +168,12 @@ func main() {
 		input := scanner.Text()
 		cmd, args := parser(input)
 
-		shell.executeCommand(cmd, args)
+		err := shell.executeCommand(cmd, args)
+		if err != nil {
+			fmt.Printf("Error: %v\n", err)
+		}
 	}
 	if err := scanner.Err(); err != nil {
-		fmt.Fprintf(os.Stderr, "Ошибка чтения ввода: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 	}
 }

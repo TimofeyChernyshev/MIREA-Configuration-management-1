@@ -1,0 +1,6 @@
+ls "123"
+cd 123
+fake_command 321
+# comment
+cd 26 1
+ls 123 "15 34"
