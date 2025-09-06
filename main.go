@@ -141,6 +141,11 @@ func main() {
 
 	flag.Parse()
 
+	// Отладочный вывод параметров
+	fmt.Printf("VFS path: %s\n", vfsPath)
+	fmt.Printf("Startup script: %s\n", startupScript)
+	fmt.Printf("Arguments: %v\n", flag.Args())
+
 	if help {
 		flag.Usage()
 		os.Exit(0)
