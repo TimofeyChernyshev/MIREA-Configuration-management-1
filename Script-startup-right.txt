@@ -1,10 +1,29 @@
-ls "123"
-cd 123
+# Stage 4. ls command
+ls
+ls /
+ls test_vfs/dir1
 
-# comment
-cd 26 1
-ls 123 "15 34"
-vfs-load my_vfs
+# Stage 4. cd command
+cd test_vfs
+cd /
+cd test_vfs/dir1
+cd ..
+cd ..
+cd /test_vfs/dir2/subdir1
+cd .
 
-# save vfs to upper folder
-vfs-save ..
+# Stage 4. uniq command
+cd /
+uniq test_vfs/dir1/file1.txt
+cd test_vfs/dir1
+uniq file1.txt
+
+# Stage 4. tail command
+cd /
+tail Script-startup-right.txt
+tail Script-startup-right.txt Script-startup-wrong.txt
+tail -n 3 Script-startup-right.txt
+tail -n 3 Script-startup-right.txt Script-startup-wrong.txt
+
+# Stage 4. vfs-save
+vfs-save test_2

@@ -1,13 +1,29 @@
-ls "123"
-cd 123
 fake_command 321
-
-# save without loading vfs
-vfs-save .
-
-# load from wrong folder
-vfs-load 123
 
 # use vfs-save/vfs-load command without argument
 vfs-save
-vfs-load
+
+# Stage 4. ls to file, cd to file
+ls /test_vfs/dir1/file1.txt
+cd /test_vfs/dir1/file1.txt
+
+# Stage 4. ls, cd to wrong directory
+ls "123 123"
+cd 123
+
+# Stage 4. uniq, tail without arguments
+uniq
+tail
+
+# Stage 4. tail wrong -n paramater
+tail -n -12 /test_vfs/dir1/file1.txt
+tail -n 0 /test_vfs/dir1/file1.txt
+
+# Stage 4. tail -n without path
+tail -n 5
+
+# Stage 4. tail -n without number
+tail -n /test_vfs/dir1/file1.txt
+
+# Stage 4. tail to directory
+tail /test_vfs/dir1
