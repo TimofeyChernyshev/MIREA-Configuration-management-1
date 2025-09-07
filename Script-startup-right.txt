@@ -27,3 +27,25 @@ tail -n 3 Script-startup-right.txt Script-startup-wrong.txt
 
 # Stage 4. vfs-save
 vfs-save test_2
+
+# Stage 5. mv command - переименование файла
+mv test_vfs/dir1/file1.txt test_vfs/dir1/renamed_file.txt
+
+# Stage 5. mv command - перемещение файла в директорию
+mv test_vfs/dir1/file2.txt test_vfs/
+
+# Stage 5. mv command - переименование директории
+mv test_vfs/dir1 test_vfs/dir5
+
+# Stage 5. mv command - перемещение директории
+mv test_vfs/dir3 test_vfs/dir2/
+vfs-save saved-vfs
+
+# Stage 5. chown command - изменение владельца файла
+chown admin test_vfs/dir5/renamed_file.txt
+
+# Stage 5. chown command - изменение владельца директории
+chown root test_vfs/dir2/
+
+# Stage 5. chown command - несколько файлов
+chown user test_vfs/root1.txt test_vfs/root2.txt

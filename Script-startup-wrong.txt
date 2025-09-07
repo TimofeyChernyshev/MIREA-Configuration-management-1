@@ -27,3 +27,37 @@ tail -n /test_vfs/dir1/file1.txt
 
 # Stage 4. tail to directory
 tail /test_vfs/dir1
+
+# Stage 5. mv без аргументов
+mv
+
+# Stage 5. mv с недостаточным количеством аргументов
+mv file.txt
+
+# Stage 5. mv несуществующего файла
+mv non_existent.txt somewhere.txt
+
+# Stage 5. mv в существующий файл
+mv test_vfs/dir1/file1.txt test_vfs/root1.txt
+
+# Stage 5. mv в самого себя
+mv test_vfs/dir1/file1.txt test_vfs/dir1/file1.txt
+mv test_vfs/dir1 test_vfs/dir1
+
+# Stage 5. chown без аргументов
+chown
+
+# Stage 5. chown с недостаточным количеством аргументов
+chown admin
+
+# Stage 5. chown несуществующего файла
+chown admin non_existent.txt
+
+# Stage 5. chown несуществующего пользователя
+chown nonexistentuser file.txt
+
+# Stage 5. mv в несуществующую директорию
+mv test_vfs/dir1/file1.txt non_existent_dir/
+
+# Stage 5. mv нескольких файлов в файл (а не директорию)
+mv test_vfs/dir1/file1.txt test_vfs/dir1/file2.txt test_vfs/root1.txt

@@ -41,6 +41,8 @@ func NewShell() *Shell {
 		"vfs-save": shell.vfsSaveCommand,
 		"uniq":     shell.uniqCommand,
 		"tail":     shell.tailCommand,
+		"mv":       shell.mvCommand,
+		"chown":    shell.chownCommand,
 	}
 	return shell
 }
@@ -225,6 +227,103 @@ func (s *Shell) tailCommand(args []string) {
 		if len(files) > 1 && fileArg != files[len(files)-1] {
 			fmt.Println() // Пустая строка между файлами
 		}
+	}
+}
+func (s *Shell) mvCommand(args []string) {
+	// Перемещает/переименовывает файлы и директории
+	if len(args) < 2 {
+		fmt.Println("Error: missing arguments")
+		return
+	}
+
+	sources := args[:len(args)-1]
+	destination := args[len(args)-1]
+
+	// Проверяем, является ли назначение директорией
+	destNode, err := s.vfs.FindNode(destination)
+	isDestDir := err == nil && destNode.IsDir
+
+	// Если перемещаем несколько файлов, назначение должно быть директорией
+	if len(sources) > 1 && !isDestDir {
+		fmt.Printf("Error: %s is not a directory\n", destination)
+		return
+	}
+	for _, source := range sources {
+		sourcePath := source
+		if !strings.HasPrefix(sourcePath, "/") {
+			sourcePath = s.currentPath + "/" + sourcePath
+		}
+		sourceNode, err := s.vfs.FindNode(sourcePath)
+		if err != nil {
+			fmt.Printf("Error: %v\n", err)
+			continue
+		}
+		var destPath string
+		if isDestDir {
+			// Если назначение - директория, добавляем имя исходного файла/папки
+			destPath = destination + "/" + sourceNode.Name
+		} else {
+			destPath = destination
+		}
+		// Делаем путь абсолютным, если он относительный
+		if !strings.HasPrefix(destPath, "/") {
+			destPath = s.currentPath + "/" + destPath
+		}
+		// Проверяем, не пытаемся ли переместить в самого себя
+		if sourcePath == destPath {
+			fmt.Println("Error: trying to move to itself")
+			continue
+		}
+		// Проверяем, существует ли уже целевой путь
+		existingNode, err := s.vfs.FindNode(destPath)
+		if err == nil {
+			// Если существует и это директория, и исходный объект тоже директория, то перемещаем внутрь с тем же именем
+			if existingNode.IsDir && sourceNode.IsDir {
+				destPath = destPath + "/" + sourceNode.Name
+			} else {
+				fmt.Printf("Error: cannot move %s to %s; File exists\n", source, destination)
+				continue
+			}
+		}
+		// Проверяем, не пытаемся ли переместить родительскую папку в дочернюю
+		if strings.HasPrefix(destPath, sourcePath+"/") {
+			fmt.Printf("Error: cannot move %s into its subdirectory %s\n", source, destination)
+			continue
+		}
+		err = s.vfs.MoveNode(sourcePath, destPath)
+		if err != nil {
+			fmt.Printf("Error: %s\n", err)
+		} else {
+			fmt.Printf("Moved %s to %s\n", source, destination)
+		}
+	}
+}
+func (s *Shell) chownCommand(args []string) {
+	// меняет владельца файла
+	if len(args) < 2 {
+		fmt.Println("Error: missing argument")
+		return
+	}
+
+	owner := args[0]
+	files := args[1:]
+
+	for _, file := range files {
+		filePath := file
+		if !strings.HasPrefix(filePath, "/") {
+			filePath = s.currentPath + filePath
+		}
+
+		node, err := s.vfs.FindNode(filePath)
+		if err != nil {
+			fmt.Printf("chown: %v\n", err)
+			continue
+		}
+
+		// Изменяем владельца
+		node.Owner = owner
+		node.ModTime = time.Now()
+		fmt.Printf("Changed owner of '%s' to '%s'\n", file, owner)
 	}
 }
 func (s *Shell) executeCommand(cmd string, args []string) error {

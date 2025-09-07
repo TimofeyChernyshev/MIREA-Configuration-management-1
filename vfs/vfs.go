@@ -15,6 +15,7 @@ type VFSNode struct {
 	Content  string     `json:"content,omitempty"`  // Содержимое файла (для файлов)
 	Children []*VFSNode `json:"children,omitempty"` // Дочерние узлы (для папок)
 	ModTime  time.Time  `json:"modTime"`            // Время последнего изменения
+	Owner    string     `json:"owner,omitempty"`    // Владелец файла
 }
 
 // Виртуальная файловая система
@@ -168,4 +169,71 @@ func (v *VFS) PrintMOTD() {
 	if err == nil && !motdNode.IsDir {
 		fmt.Printf("%s\n", motdNode.Content)
 	}
+}
+
+// Перемещает/переименовывает узел
+func (v *VFS) MoveNode(sourcePath, destPath string) error {
+	// Находим исходный узел
+	sourceNode, err := v.FindNode(sourcePath)
+	if err != nil {
+		return err
+	}
+
+	// Находим родительский каталог источника
+	sourceParentPath := getParentPath(sourcePath)
+	sourceParent, err := v.FindNode(sourceParentPath)
+	if err != nil {
+		return err
+	}
+
+	// Находим родительский каталог назначения
+	destParentPath := getParentPath(destPath)
+	destParent, err := v.FindNode(destParentPath)
+	if err != nil {
+		return err
+	}
+
+	if !destParent.IsDir {
+		return fmt.Errorf("destination parent is not a directory")
+	}
+
+	// Получаем новое имя из целевого пути
+	destName := getNameFromPath(destPath)
+
+	// Проверяем, не существует ли уже узел с таким именем в целевой директории
+	for _, child := range destParent.Children {
+		if child.Name == destName {
+			return fmt.Errorf("file or directory already exists")
+		}
+	}
+
+	// Удаляем узел из исходного родителя
+	for i, child := range sourceParent.Children {
+		if child == sourceNode {
+			sourceParent.Children = append(sourceParent.Children[:i], sourceParent.Children[i+1:]...)
+			break
+		}
+	}
+
+	// Меняем имя узла и добавляем в нового родителя
+	sourceNode.Name = destName
+	sourceNode.ModTime = time.Now()
+	destParent.Children = append(destParent.Children, sourceNode)
+
+	return nil
+}
+func getParentPath(path string) string {
+	cleanPath := strings.Trim(path, "/")
+	parts := strings.Split(cleanPath, "/")
+	if len(parts) <= 1 {
+		return "/"
+	}
+	return "/" + strings.Join(parts[:len(parts)-1], "/")
+}
+func getNameFromPath(path string) string {
+	parts := strings.Split(strings.Trim(path, "/"), "/")
+	if len(parts) == 0 {
+		return ""
+	}
+	return parts[len(parts)-1]
 }
