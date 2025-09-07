@@ -9,27 +9,39 @@ import (
 	"os/user"
 	"regexp"
 	"strings"
+	"time"
+
+	"github.com/TimofeyChernyshev/MIREA-Configuration-management-1/vfs"
 )
 
 // Структура для хранения команд - карта, где ключи - имена команд, а значения - функции
 type Shell struct {
-	commands      map[string]func([]string)
-	vfsPath       string
-	startupScript string
+	commands map[string]func([]string)
+	vfs      vfs.VFS
 }
 
-func NewShell(vfsPath, startupScript string) *Shell {
-	shell := &Shell{
-		vfsPath:       vfsPath,
-		startupScript: startupScript,
+func NewShell() *Shell {
+	shell := &Shell{}
+	shell.vfs = vfs.VFS{
+		Root: &vfs.VFSNode{
+			Name:     "/",
+			IsDir:    true,
+			ModTime:  time.Now(),
+			Children: []*vfs.VFSNode{},
+		},
+		IsLoaded: false,
 	}
 	shell.commands = map[string]func([]string){
-		"ls":   shell.lsCommand,
-		"cd":   shell.cdCommand,
-		"exit": shell.exitCommand,
+		"ls":       shell.lsCommand,
+		"cd":       shell.cdCommand,
+		"exit":     shell.exitCommand,
+		"vfs-save": shell.vfsSaveCommand,
+		"vfs-load": shell.vfsLoadCommand,
 	}
 	return shell
 }
+
+// SHELL METHODS
 func (s *Shell) lsCommand(args []string) {
 	fmt.Printf("Command: ls, arguments: %v\n", args)
 }
@@ -38,6 +50,32 @@ func (s *Shell) cdCommand(args []string) {
 }
 func (s *Shell) exitCommand(args []string) {
 	os.Exit(0)
+}
+func (s *Shell) vfsLoadCommand(args []string) {
+	if len(args) == 0 {
+		fmt.Println("vfs-load: need path to directory")
+		return
+	}
+	err := s.vfs.LoadFromDisk(args[0])
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return
+	}
+}
+func (s *Shell) vfsSaveCommand(args []string) {
+	if len(args) == 0 {
+		fmt.Println("vfs-save: need path to save")
+		return
+	}
+	if !s.vfs.IsLoaded {
+		fmt.Println("vfs-save: VFS isn`t loaded")
+		return
+	}
+	err := s.vfs.SaveToDisk(args[0])
+	if err != nil {
+		fmt.Printf("vfs-save: save error: %v\n", err)
+	}
+	fmt.Printf("VFS saved to %v\n", args[0])
 }
 func (s *Shell) executeCommand(cmd string, args []string) error {
 	if handler, exists := s.commands[cmd]; exists {
@@ -134,24 +172,26 @@ func main() {
 	var help bool
 
 	// vfs - параметр, -vfs аргументы, если нет аргументов, то vfsPath = ".vfs", "Path to VFS" - текст справки при вызове -help
-	flag.StringVar(&vfsPath, "vfs", ".vfs", "Path to VFS")
+	flag.StringVar(&vfsPath, "vfs", "", "Path to VFS")
 	flag.StringVar(&startupScript, "script", "", "Path to startup script")
 	flag.BoolVar(&help, "help", false, "Show help")
-	flag.BoolVar(&help, "h", false, "Show help (short form)")
+	flag.BoolVar(&help, "h", false, "Show help")
 
 	flag.Parse()
 
-	// Отладочный вывод параметров
-	fmt.Printf("VFS path: %s\n", vfsPath)
-	fmt.Printf("Startup script: %s\n", startupScript)
-	fmt.Printf("Arguments: %v\n", flag.Args())
-
 	if help {
 		flag.Usage()
-		os.Exit(0)
+	}
+	fmt.Print("Commands:\nls {arguments}\ncd {arguments}\nexit\nvfs-save {path}\nvfs-load {path}\n")
+
+	shell := NewShell()
+	if vfsPath != "" {
+		err := shell.vfs.LoadFromDisk(vfsPath)
+		if err != nil {
+			fmt.Printf("Error: %v\n", err)
+		}
 	}
 
-	shell := NewShell(vfsPath, startupScript)
 	if startupScript != "" {
 		if err := shell.executeScript(startupScript); err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
@@ -173,9 +213,11 @@ func main() {
 		input := scanner.Text()
 		cmd, args := parser(input)
 
-		err := shell.executeCommand(cmd, args)
-		if err != nil {
-			fmt.Printf("Error: %v\n", err)
+		if cmd != "" {
+			err := shell.executeCommand(cmd, args)
+			if err != nil {
+				fmt.Printf("Error: %v\n", err)
+			}
 		}
 	}
 	if err := scanner.Err(); err != nil {

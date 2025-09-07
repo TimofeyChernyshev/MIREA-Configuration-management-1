@@ -19,8 +19,8 @@ type VFSNode struct {
 
 // Виртуальная файловая система
 type VFS struct {
-	Root    *VFSNode `json:"root"` // Корневой узел
-	Mounted bool     `json:"-"`    // Загружена ли VFS в память
+	Root     *VFSNode `json:"root"` // Корневой узел
+	IsLoaded bool     `json:"-"`    // Загружена ли VFS в память
 }
 
 func (v *VFS) LoadFromDisk(path string) error {
@@ -34,14 +34,14 @@ func (v *VFS) LoadFromDisk(path string) error {
 		ModTime: time.Now(),
 	}
 	// Рекурсивный обход всех файлов и папок
-	err = filepath.Walk(absPath, func(FilePath string, info os.FileInfo, err error) error {
+	err = filepath.Walk(absPath, func(filePath string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-		if FilePath == absPath {
+		if filePath == absPath {
 			return nil // Пропускаем корневую директорию
 		}
-		relPath, err := filepath.Rel(absPath, FilePath)
+		relPath, err := filepath.Rel(absPath, filePath)
 		if err != nil {
 			return err
 		}
@@ -51,7 +51,7 @@ func (v *VFS) LoadFromDisk(path string) error {
 			ModTime: info.ModTime(),
 		}
 		if !info.IsDir() {
-			content, err := os.ReadFile(FilePath)
+			content, err := os.ReadFile(filePath)
 			if err != nil {
 				return err
 			}
@@ -60,7 +60,11 @@ func (v *VFS) LoadFromDisk(path string) error {
 		v.addNode(relPath, node)
 		return nil
 	})
-	v.Mounted = true
+	v.IsLoaded = true
+	if err == nil {
+		fmt.Printf("VFS loaded from: %v\n", path)
+		v.PrintMOTD()
+	}
 	return err
 }
 
@@ -162,6 +166,6 @@ func (v *VFS) FindNode(path string) (*VFSNode, error) {
 func (v *VFS) PrintMOTD() {
 	motdNode, err := v.FindNode("motd")
 	if err == nil && !motdNode.IsDir {
-		fmt.Printf("\n%s\n", motdNode.Content)
+		fmt.Printf("%s\n", motdNode.Content)
 	}
 }
