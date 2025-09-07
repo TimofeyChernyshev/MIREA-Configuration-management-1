@@ -1,5 +1,10 @@
 ls "123"
 cd 123
+
 # comment
 cd 26 1
 ls 123 "15 34"
+vfs-load my_vfs
+
+# save vfs to upper folder
+vfs-save ..

@@ -1,6 +1,13 @@
 ls "123"
 cd 123
 fake_command 321
-# comment
-cd 26 1
-ls 123 "15 34"
+
+# save without loading vfs
+vfs-save .
+
+# load from wrong folder
+vfs-load 123
+
+# use vfs-save/vfs-load command without argument
+vfs-save
+vfs-load
