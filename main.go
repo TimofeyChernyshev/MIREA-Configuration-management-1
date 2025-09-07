@@ -48,7 +48,7 @@ func getInvitation() string {
 	if err != nil {
 		username = os.Getenv("USER")
 	} else {
-		username = currentUser.Username
+		username = currentUser.Name
 	}
 	// Имя хоста
 	hostname, err := os.Hostname()
@@ -100,8 +100,9 @@ func main() {
 		// считывание ввода
 		input := scanner.Text()
 		cmd, args := parser(input)
-
-		shell.executeCommand(cmd, args)
+		if cmd != "" {
+			shell.executeCommand(cmd, args)
+		}
 	}
 	if err := scanner.Err(); err != nil {
 		fmt.Fprintf(os.Stderr, "Ошибка чтения ввода: %v\n", err)
