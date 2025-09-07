@@ -133,8 +133,8 @@ func main() {
 	var startupScript string
 	var help bool
 
-	// vfs - параметр, -vfs аргументы, если нет аргументов, то vfsPath = ".vfs", "Path to VFS" - текст справки при вызове -help
-	flag.StringVar(&vfsPath, "vfs", ".vfs", "Path to VFS")
+	// vfs - параметр, -vfs аргументы, если нет аргументов, то vfsPath = "vfs", "Path to VFS" - текст справки при вызове -help
+	flag.StringVar(&vfsPath, "vfs", "vfs", "Path to VFS")
 	flag.StringVar(&startupScript, "script", "", "Path to startup script")
 	flag.BoolVar(&help, "help", false, "Show help")
 	flag.BoolVar(&help, "h", false, "Show help (short form)")
@@ -173,9 +173,11 @@ func main() {
 		input := scanner.Text()
 		cmd, args := parser(input)
 
-		err := shell.executeCommand(cmd, args)
-		if err != nil {
-			fmt.Printf("Error: %v\n", err)
+		if cmd != "" {
+			err := shell.executeCommand(cmd, args)
+			if err != nil {
+				fmt.Printf("Error: %v\n", err)
+			}
 		}
 	}
 	if err := scanner.Err(); err != nil {
