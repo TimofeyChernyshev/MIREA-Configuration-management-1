@@ -311,7 +311,7 @@ func (s *Shell) chownCommand(args []string) {
 	for _, file := range files {
 		filePath := file
 		if !strings.HasPrefix(filePath, "/") {
-			filePath = s.currentPath + filePath
+			filePath = s.currentPath + "/" + filePath
 		}
 
 		node, err := s.vfs.FindNode(filePath)
@@ -323,7 +323,8 @@ func (s *Shell) chownCommand(args []string) {
 		// Изменяем владельца
 		node.Owner = owner
 		node.ModTime = time.Now()
-		fmt.Printf("Changed owner of '%s' to '%s'\n", file, owner)
+		fmt.Printf("Changed owner of '%s' to '%s'\n", file, node.Owner)
+		fmt.Printf("Owner of file is %s\n", node.Owner) // Выводит текущего владельца файла
 	}
 }
 func (s *Shell) executeCommand(cmd string, args []string) error {
