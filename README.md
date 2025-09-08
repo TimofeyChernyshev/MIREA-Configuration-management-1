@@ -1,7 +1,18 @@
 # MIREA-Configuration-management-1
-It is an emulator for the OS shell language, made to work in the command line of a UNIX-like OS on Go
-- To show help:                  go run main.go -help
-- To start with custom VFS path: go run main.go -vfs {path}
-- To start with startup script:  go run main.go -script {path_to_file}
-- To use commands connected with VFS, you need to have a folder on your device
-- Start Script-create-test-vfs.bat to create test VFS
+It is an emulator for the OS shell language, made to work in the command line of a UNIX-like OS on Go (24 вариант)  
+1 Этап.  
+Приложение реализовано в форме CLI  
+Приглашение к вводу формируются на основе реальных данных ОС  
+Парсер корректно обрабатывает аргументы в одинарных и двойных кавычках  
+Реализованы команды заглушки ls, cd  
+Реализована команда exit  
+Добавлена обработка ошибок  
+Shell - структура для хранеия карты команд, где ключи - имена команд, а значения - функции  
+функция NewShell(). В этой функции создается объект структуры Shell, заполняется карта команд, возвращается указатель на этот объект  
+функция lsCommand(), которая является заглушкой и возвращает свое имя и аргументы  
+функция cdCommand(), которая является заглушкой и возвращает свое имя и аргументы  
+функция exitCommand(), которая нужна для заврешения работы  
+функция executeCommand(), которая запускает функцию из карты команд   
+функция getInvitation(), возвращает строку ввиде username@hostname:~$  
+функция parser(), которая обрабатывает аргументы в кавычках  
+функция main(), в которой выводится кастомной приглашение к вводу и считывается ввод пользователя
