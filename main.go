@@ -22,6 +22,7 @@ type Shell struct {
 	currentPath string
 }
 
+// NewShell() создает новую оболочку
 func NewShell() *Shell {
 	shell := &Shell{}
 	shell.vfs = vfs.VFS{
