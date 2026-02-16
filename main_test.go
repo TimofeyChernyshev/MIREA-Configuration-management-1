@@ -12,6 +12,7 @@ import (
 	"github.com/TimofeyChernyshev/MIREA-Configuration-management-1/vfs"
 )
 
+// TestParser проверяет корректность определения команды и ее аргументов
 func TestParser(t *testing.T) {
 	tests := []struct {
 		name         string
